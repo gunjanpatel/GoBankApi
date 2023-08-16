@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/gunjanpatel/go-bank"
+	bank "github.com/gunjanpatel/GoBank"
 )
 
 var accounts = map[float64]*bank.Account{}
