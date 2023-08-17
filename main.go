@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -9,7 +10,44 @@ import (
 	bank "github.com/gunjanpatel/GoBank"
 )
 
-var accounts = map[float64]*bank.Account{}
+const API_DOMAIN = "localhost:8000"
+
+// Custome struct to extend statement method
+type CustomAccount struct {
+	*bank.Account
+}
+
+var accounts = map[float64]*CustomAccount{}
+
+func main() {
+	accounts[1001] = &CustomAccount{
+		Account: &bank.Account{
+			Customer: bank.Customer{
+				Name:    "Gunjan",
+				Address: "Test 123, Denmark",
+				Phone:   "(213) 555 0147",
+			},
+			Number: 1001,
+		},
+	}
+
+	accounts[1002] = &CustomAccount{
+		Account: &bank.Account{
+			Customer: bank.Customer{
+				Name:    "Prital",
+				Address: "Test 123, Denmark",
+				Phone:   "(213) 555 0147",
+			},
+			Number: 1002,
+		},
+	}
+
+	fmt.Printf("Starting server at: http://%v", API_DOMAIN)
+	http.HandleFunc("/statement", statement)
+	http.HandleFunc("/deposit", deposit)
+	http.HandleFunc("/withdraw", withdraw)
+	log.Fatal(http.ListenAndServe(API_DOMAIN, nil))
+}
 
 func statement(w http.ResponseWriter, req *http.Request) {
 	numberqs := req.URL.Query().Get("number")
@@ -32,7 +70,7 @@ func statement(w http.ResponseWriter, req *http.Request) {
 		fmt.Fprintf(w, "Account with number %v is not exist", number)
 	}
 
-	fmt.Fprintf(w, account.Statement())
+	fmt.Fprintf(w, bank.Statement(account))
 }
 
 func deposit(w http.ResponseWriter, req *http.Request) {
@@ -72,7 +110,7 @@ func deposit(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	fmt.Fprintf(w, account.Statement())
+	fmt.Fprintf(w, bank.Statement(account))
 }
 
 func withdraw(w http.ResponseWriter, req *http.Request) {
@@ -97,25 +135,19 @@ func withdraw(w http.ResponseWriter, req *http.Request) {
 			if err != nil {
 				fmt.Fprintf(w, "%v", err)
 			} else {
-				fmt.Fprintf(w, account.Statement())
+				fmt.Fprintf(w, bank.Statement(account))
 			}
 		}
 	}
 }
 
-func main() {
-	accounts[1001] = &bank.Account{
-		Customer: bank.Customer{
-			Name:    "Gunjan",
-			Address: "Test 123, Denmark",
-			Phone:   "(213) 555 0147",
-		},
-		Number: 1001,
+// Generate statement
+func (a CustomAccount) Statement() string {
+	jsonData, err := json.Marshal(a)
+
+	if err != nil {
+		return err.Error()
 	}
 
-	fmt.Printf("Starting server at: http://localhost:8000")
-	http.HandleFunc("/statement", statement)
-	http.HandleFunc("/deposit", deposit)
-	http.HandleFunc("/withdraw", withdraw)
-	log.Fatal(http.ListenAndServe("localhost:8000", nil))
+	return string(jsonData)
 }
