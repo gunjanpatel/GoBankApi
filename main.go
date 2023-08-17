@@ -113,6 +113,7 @@ func main() {
 		Number: 1001,
 	}
 
+	fmt.Printf("Starting server at: http://localhost:8000")
 	http.HandleFunc("/statement", statement)
 	http.HandleFunc("/deposit", deposit)
 	http.HandleFunc("/withdraw", withdraw)
